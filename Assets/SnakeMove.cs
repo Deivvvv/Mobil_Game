@@ -17,57 +17,120 @@ public class SnakeMove : MonoBehaviour
     [SerializeField]
     private GameObject touch;
 
+    [SerializeField]
+    private float snakeSpeed;
+    [SerializeField]
+    private float snakeUberSpeed;
     private Rigidbody rb;
     private float timeMatch;
+
+    private SnakeTail snakeTail;
+
+    private float time =1;
     // Start is called before the first frame update
     void Start()
     {
+        camera = Camera.main;
         rb = snake.GetComponent<Rigidbody>();
-        Application.targetFrameRate = 60;
+        Application.targetFrameRate = 30;
+
+        snakeTail = gameObject.GetComponent<SnakeTail>();// snakeTail.StartSys();
+        snakeTail.StartSys(snake.transform.position, Speed);
+        snakeTail.NewColor(snake.GetComponent<MeshRenderer>().material);
     }
 
     // Update is called once per frame
-    void FixedUpdate()
+    public float Speed = 2;
+    public Queue<Vector3> Points = new Queue<Vector3>();
+    private Camera camera;
+    private Vector3 velocity;
+
+    //private void Start()
+    //{
+    //    camera = Camera.main;
+    //}
+
+    public void Uber(bool uber)
     {
-        if (!stop)
-        {//rb.velocity
-            int zPosition = 0;
-            look.transform.position = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10));
-            if (look.transform.position.x - 0.1f < snake.transform.position.x)
-            {
-                if (snake.transform.position.z < 2)
-                    zPosition = 5;
-            }
-            else if (look.transform.position.x + 0.1f > snake.transform.position.x)
-            {
+        if (uber)
+        {
 
-                if (snake.transform.position.z > -2)
-                    zPosition = -5;
-            }
+        }
+        else
+        {
 
-
-
-                    //if (look.transform.position.x < snake.transform.position.x) 
-                    //{
-                    //    if (snake.transform.position.z < 5)
-                    //    {
-                    //        snake.transform.position += new Vector3(0,0, 5f * Time.deltaTime);
-                    //    }
-
-                    //}
-                    //else //if (look.transform.position.x < snake.transform.position.x)
-                    //{
-                    //    if (snake.transform.position.z > -5)
-                    //    {
-                    //        snake.transform.position -= new Vector3(0, 0, 5f * Time.deltaTime);
-                    //    }
-
-                    //}
-                    //snake.transform.position += new Vector3(5f * Time.deltaTime, 0, 0);
-
-                    rb.velocity = new Vector3(5f,0, zPosition);
-            //   Transform v = GameObject.transform;//.position
-            //  snake.transform.position -= new Vector3(snake.transform.position.x + 0.1f, snake.transform.position.y, snake.transform.position.z);
         }
     }
+
+    void FixedUpdate()
+    {
+        time -= 0.3f;
+        //if(Input.GetAxis("Mouse X") != 0)
+        //        {
+            var mouse = Input.mousePosition;
+            Vector3 p;
+          //  Debug.Log(look.transform.position);
+            //if (camera.orthographic)
+            //{
+            //    p = camera.ScreenToWorldPoint(new Vector3(mouse.x, mouse.y, 0));
+            //    p.z = 0;
+            //}
+            //else
+            //{
+            p = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10));
+
+
+            float zPosition = p.z;
+
+            if (p.z - 0.1f > look.transform.position.z)
+            {
+                if (p.z < 3f)
+                {
+                    zPosition = p.z;// - tailSpeed + tailSizeSpeed * i;
+                }
+                else
+                {
+                    zPosition = 3;
+                }
+            }
+            else if (p.z + 0.1f < look.transform.position.z)
+            {
+                if (p.z > -3f)
+                {
+                    zPosition = p.z;// - tailSpeed + tailSizeSpeed * i;
+                }
+                else
+                {
+                    zPosition = -3;
+                }
+            }
+
+            look.transform.position = new Vector3(snake.transform.position.x +snakeSpeed , 1.4f, zPosition);
+
+            p = look.transform.position;
+
+        if (time <= 0)
+        {
+            time = 1;
+            Points.Enqueue(p);
+        }
+
+
+        while (Points.Count > 0 && Points.Peek().x < look.transform.position.x-1f)
+        {
+           snakeTail.SetPositionTail(Points.Peek());
+            Points.Dequeue();
+        }
+
+        if (Points.Count > 0)
+        {
+            velocity = (Points.Peek() - snake.transform.position).normalized * Speed;
+            snake.transform.position = Vector3.MoveTowards(transform.position, Points.Peek(), Speed * Time.deltaTime);
+        }
+        else
+        {
+            snake.transform.position += velocity * Time.deltaTime;
+        }
+    }
+
 }
